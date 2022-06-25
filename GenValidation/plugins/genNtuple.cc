@@ -501,6 +501,10 @@ void genNtuple::addJetBranches()
       m_tree->Branch("jets_flavour",   storageMapFloatArray["jets_flavour"],"jets_flavour[nJets]/F");
       storageMapFloatArray["jets_pFlavour"] = new Float_t[N_ITEMS_MAX];
       m_tree->Branch("jets_pFlavour",   storageMapFloatArray["jets_pFlavour"],"jets_pFlavour[nJets]/F");
+      storageMapFloatArray["jets_bJetRegCorr"] = new Float_t[N_ITEMS_MAX];
+      m_tree->Branch("jets_bJetRegCorr",   storageMapFloatArray["jets_bJetRegCorr"],"jets_bJetRegCorr[nJets]/F");
+      storageMapFloatArray["jets_bJetRegRes"] = new Float_t[N_ITEMS_MAX];
+      m_tree->Branch("jets_bJetRegRes",   storageMapFloatArray["jets_bJetRegRes"],"jets_bJetRegRes[nJets]/F");
 }
 
 
@@ -524,6 +528,8 @@ void genNtuple::fillJetBranches( const edm::Event& iEvent)
                                                                recJet.bDiscriminator("pfDeepFlavourJetTags:problepb");
             storageMapFloatArray["jets_flavour"][idx]        = recJet.hadronFlavour() ;
             storageMapFloatArray["jets_pFlavour"][idx]       = recJet.partonFlavour();
+            storageMapFloatArray["jets_bJetRegCorr"][idx]    = recJet.userFloat("bJetRegCorr");
+            storageMapFloatArray["jets_bJetRegRes"][idx]        = recJet.userFloat("bJetRegRes");
         idx++;
     }
     storageMapInt["nJets"]=idx;
