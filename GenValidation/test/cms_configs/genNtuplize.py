@@ -73,7 +73,7 @@ process.slimmedJetsbReg = cms.EDProducer("PATJetUserDataEmbedder",
 )
 
 process.ntuplizer = cms.EDAnalyzer(
-       "electronNtuple",
+       "genNtuple",
        label_pileUp = cms.untracked.InputTag("slimmedAddPileupInfo"),
        pruned     = cms.InputTag("prunedGenParticles"),
        photons = cms.InputTag("slimmedPhotons"),
