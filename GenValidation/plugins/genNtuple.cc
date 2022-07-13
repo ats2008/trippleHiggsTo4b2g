@@ -63,32 +63,8 @@ using namespace std;
 //using namespace fastjet::contrib;
 const Int_t kMaxVertices = 300;
 const Int_t kMaxGenJet = 300;
-/*
-//corrections for xy-corrections//
-void Corr_met(float met, float met_phi, int npv, float* corr_met, float* corr_met_phi, float* corr_met_x, float* corr_met_y)
-{
 
-  double METxcorr = -(0.296713*npv -0.141506);
-  double METycorr = -(0.115685*npv +0.0128193);
-   
-  double CorrectedMET_x = met*cos(met_phi)+METxcorr;
-  double CorrectedMET_y = met*sin(met_phi)+METycorr;
 
-  double CorrectedMET = sqrt(CorrectedMET_x*CorrectedMET_x+CorrectedMET_y*CorrectedMET_y);
-  double CorrectedMETPhi;
-  if(CorrectedMET_x==0 && CorrectedMET_y>0) CorrectedMETPhi = TMath::Pi();
-  else if(CorrectedMET_x==0 && CorrectedMET_y<0 )CorrectedMETPhi = -TMath::Pi();
-  else if(CorrectedMET_x >0) CorrectedMETPhi = TMath::ATan(CorrectedMET_y/CorrectedMET_x);
-  else if(CorrectedMET_x <0&& CorrectedMET_y>0) CorrectedMETPhi = TMath::ATan(CorrectedMET_y/CorrectedMET_x) + TMath::Pi();
-  else if(CorrectedMET_x <0&& CorrectedMET_y<0) CorrectedMETPhi = TMath::ATan(CorrectedMET_y/CorrectedMET_x) - TMath::Pi();
-  else CorrectedMETPhi =0;
-
-  *corr_met= CorrectedMET;
-  *corr_met_phi = CorrectedMETPhi;
-  *corr_met_x = CorrectedMET_x;
-  *corr_met_y = CorrectedMET_y;
-}
-*/
 //redefinition of delta_phi variable between -pi < delta_phi < pi
 double PhiInRange(const double& phi) {
   double phiout = phi;
@@ -156,12 +132,15 @@ class genNtuple : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
        void fillGenPrticle(TString tag,const reco::Candidate *part);
        void fillGenPrticle(TString tag,const reco::GenParticle &part);
        
+       bool doRecoJets;
        void addJetBranches();
        void fillJetBranches(const edm::Event & iEvent);
        
+       bool doGenJets;
        void addGenJetBranches();
        void fillGenJetBranches(const edm::Event & iEvent);
        
+       bool doRecoPhotons;
        void addPhotonBranches();
        void fillPhotonBranches(const edm::Event & iEvent);
 
@@ -190,10 +169,18 @@ genNtuple::genNtuple(const edm::ParameterSet& iConfig)
 {
    //now do what ever initialization is needed
    usesResource("TFileService");
+   
+   doGenJets = iConfig.getParameter<bool>("doGenJets");
+   doRecoJets = iConfig.getParameter<bool>("doRecoJets");
+   doRecoPhotons = iConfig.getParameter<bool>("doRecoPhotons");
+
    prunedGenToken_      = consumes <edm::View<reco::GenParticle>> (iConfig.getParameter<edm::InputTag>("pruned"));
-   photonsToken_       = consumes<edm::View<pat::Photon>>(iConfig.getParameter<edm::InputTag>("photons"));
-   genJetToken_=consumes<edm::View<reco::GenJet>>(iConfig.getParameter<edm::InputTag>("genJet"));
-   recJetToken_=consumes<edm::View<pat::Jet>>(iConfig.getParameter<edm::InputTag>("recJet"));
+   if(doRecoPhotons)
+        photonsToken_       = consumes<edm::View<pat::Photon>>(iConfig.getParameter<edm::InputTag>("photons"));
+   if(doGenJets)
+        genJetToken_=consumes<edm::View<reco::GenJet>>(iConfig.getParameter<edm::InputTag>("genJet"));
+   if(doRecoJets)
+        recJetToken_=consumes<edm::View<pat::Jet>>(iConfig.getParameter<edm::InputTag>("recJet"));
 
    edm::Service<TFileService> fs;
     m_tree = fs->make<TTree>("tree", "");
@@ -236,8 +223,6 @@ int genNtuple::getNPU(edm::Handle <std::vector<PileupSummaryInfo>>puInfo)
 
 void genNtuple::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
-    
-    
     edm::Handle<edm::View<reco::GenParticle>> pruned;
     iEvent.getByToken(prunedGenToken_, pruned);
 
@@ -337,13 +322,16 @@ void genNtuple::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         fillGenPrticle("H3_dau2",dau[1]);
     }
     else std::cout<<" null here \n";
-    fillJetBranches(iEvent);
-    fillGenJetBranches(iEvent);
-    fillPhotonBranches(iEvent);
+    
+    if(doRecoJets) 
+        fillJetBranches(iEvent);
+    if(doGenJets)
+        fillGenJetBranches(iEvent);
+    if(doRecoPhotons)
+        fillPhotonBranches(iEvent);
 
-
-   
     m_tree->Fill();
+
 }
 
 
